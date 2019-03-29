@@ -1,0 +1,474 @@
+\documentclass[11pt, twoside]{article}
+
+\usepackage[parfill]{parskip}
+\usepackage{amsmath}
+\usepackage{gensymb}
+\usepackage{geometry} 
+\usepackage{graphicx, caption}
+\usepackage{listings}
+\usepackage{natbib}
+\usepackage{textgreek}
+
+\lstset{
+  basicstyle=\small\ttfamily,
+  columns=flexible,
+  breaklines=true
+}
+
+\geometry{
+  a4paper,
+  total={170mm,257mm},
+  left=20mm,
+  top=20mm,
+}
+
+\begin{document}
+
+\title{Simulating the ZetaSDR radio}
+\author{Jason Leake}
+\date{March 2019}
+\maketitle
+\section{Introduction}
+The ZetaSDR radio \citep{ly1gp:2007}, designed by a Lithuanian radio
+amateur, call sign LY1GP, is a simple direct conversion radio receiver
+with a very small part count and forms the front end for a software
+defined radio. The output from it is an analogue inphase and
+quadrature signal, which allows the baseband to be extracted from
+several different forms modulation, for example frequency modulation
+and quadrature amplitude modulation.
+
+This program is simulates the operation of the 74HC4052
+\citep{Motorola:1996}, and the Johnson counter that drives it,
+producing the response to a simulated amplitude modulated RF
+signal. The source code for the simulation is {\texttt program.cpp},
+and {\texttt plot.py} generates the plots from its CSV format output
+files.  The program works on instantaneous samples of a simulated
+incoming signal using the transformations that key components apply to
+it, in contrast to circuit simulations that work as a Spice type
+solver based on Th\'evenin's and Norton's theorems.
+
+The program was written for Ubuntu Linux is dependent upon several
+packages, which can be installed via:
+
+\begin{lstlisting}
+sudo apt-get install make g++ librtlfilter-dev python3 python3-matplotlib texlive-all
+\end{lstlisting}
+
+Compilation and processing up to and including producing the graphs is
+done using the command:
+
+\begin{lstlisting}
+make
+\end{lstlisting}
+
+Generating this PDF file as well, is done using:
+
+\begin{lstlisting}
+make zetasdr.pdf
+\end{lstlisting}
+
+\section{Operation of the ZetaSDR}
+
+The incoming RF electromagnetic signal induces a small electrical
+current in the antenna.  The current passes across capacitor
+C6,\footnote{circuit diagram refers to the schematic for the ZetaSDR
+  at \cite{ly1gp:2007}.} which acts as a high pass filter, blocking DC
+from passing from the receiver circuit to the antenna, which could
+otherwise cause problems with preamplifiers.
+
+A 2.5 volt bias is applied to the RF signal by the voltage divider
+R1/R2 so that it oscillates around 2.5 volts instead of 0 volts.  This
+means that the rest of the circuit is dealing with a signal in the
+middle of its normal operating range instead of around 0 volts where
+non-linearity in the response will be greatest even if it can respond
+at all.
+
+\subsection{Tayloe mixer}
+
+The ZetaSDR use a Tayloe Mixer \citep{Tayloe:2013} to demodulate the
+signal, which is an approximation to a conventional IQ mixer. This is
+based on a 74HC4052 analogue multiplexer/demultiplexer and charge
+storage capacitors to implement an integrator.
+
+The 74HC4052 is a two channel analogue multiplexer/demultiplexer.  One
+channel has an input, X, and switches it to one of four outputs, X0
+$\rightarrow$ X3 depending on the state of the digital inputs A and B
+(as shown in Table~\ref{table:74HC4052}).  If output X{\it n} is
+enabled then the impedance between it and X is around 70 {\ohm}
+(depending on supply voltage), and if not enabled then X{\it n} has an
+extremely high impedance.  The device is bidirectional, but this is
+not relevant here, for the purposes of the ZetaSDR it is enough that
+the input from the antenna (X) is switched to one of the four outputs
+X1 $\rightarrow$ X4. The other channel has an input called Y,
+switching to Y1 $\rightarrow$ Y4.  The circuit uses both channels in
+parallel to reduce the impedance seen across the device from about 70
+{\ohm} to 35 {\ohm}.
+
+\begin{table}[ht]
+  \center
+  \begin{tabular}{|l| l| l| l|}
+    \hline
+    A & B & X & Y  \\
+    \hline
+    \hline
+    0 &0& X0& Y0\\
+    0 &1& X1& Y1\\
+    1 &0& X2& Y2\\
+    1 &1& X3& Y3\\
+    \hline
+  \end{tabular}
+  \caption{Operation of 74HC4052}
+  \label{table:74HC4052}
+\end{table}
+
+The inputs A and B are driven by a Johnson counter (also called a
+twisted ring counter) made from two D-type flip flops.  This provides
+two binary signals, connected to A and B, that change on every clock
+cycle.  The clock is supplied by the QG2 local oscillator. The counter
+operates as a 2 bit wide shift register, with the the last bit value
+being inverted and fed into the first bit of the shift register on
+each clock cycle, so generating a repeating sequence 00, 01, 11, 10.
+The local oscillator runs at four times the frequency of the RF
+carrier, producing a new bit pattern in the Johnson counter, and thus
+switching the 74HC4052, on every quarter cycle of the RF carrier.
+
+Hence, each of the four pairs of outputs X0/Y0, X1/Y1, X2/Y2 and X3/Y3
+receive a quarter cycle of the RF signal.  The outputs connect to
+capacitors that charge/discharge as the RF carrier signal is applied
+to them but hold their voltage when the corresponding 74HC4052 output
+is disabled and so in its high impedance state. The amplitude of the
+RF carrier depends on the incoming signal strength and the quality of
+the antenna and preamplifier, so I picked an arbitrary value of 1 mV
+for the simulation program.
+
+Since the local oscillator output is the Johnson counter clock, the
+flip flops making up the counter change when the local oscillator
+signal transitions from a voltage corresponding to logic 0 to one
+representing logic 1.  The simulation sets this at a conventional 2.4
+volts, and since the local oscillator has a swing of 5 volts, the
+clock occurs just below the midpoint on the local oscillator upswing.
+
+Because the Johnson counter produces the sequence 00, 01, 11, 10, the
+first and third quarters of the RF carrier cycle are selected using
+outputs X0 and X3 respectively, and the second and fourth using X1 and
+X2.  If a binary counter that produced the sequence 00, 01, 10, 11,
+was used instead then the outputs would be X0/X2 and X1/X3.
+
+The voltage on capacitors C2 and C3 are shown in
+Figure~\ref{figure:C2C3simple}, in a somewhat idealised simulation of
+the circuit.  The local oscillator is set to have a range of 0--5
+volts, and have its 0\degree point at the 0\degree, 90\degree,
+180\degree and 270\degree positions of the RF carrier.  In this
+idealised simulation the Johnson counter therefore changes state very
+slightly before this point, when the local oscillator voltage is
+rising through 2.4 volts.
+
+In practice, it is unlikely that the local oscillator will be in phase
+with the RF carrier, and there will be small delays in the Johnson
+counter logic and the 74HC4052 operation.
+
+The two capacitors are also connected to the differential inputs of an
+active low pass filter that both amplifies and filters the difference
+between the two voltages.  This voltage is shown on the lower plot in
+Figure~\ref{figure:C2C3simple} -- the effect of taking the difference
+between the two signals, which will be normally be similar but of
+opposite polarity, is to produce a signal of double the size of each.
+The corresponding voltages on the other pair of capacitors, C4 and C5,
+are shown in Figure~\ref{figure:C4C5simple}.
+
+\begin{figure}
+  \center
+  \captionsetup{width=.8\linewidth}
+  \includegraphics[width=.8\linewidth]{c2c3Voltage.png}
+  \caption{Voltage on C2 and C3, ZetaSDR, when the local
+    oscillator is in phase with the RF signal. The 74HC4052 switching
+    leads the RF signal phase very slightly because its local
+    oscillator derived clock changes logic state just below the
+    midpoint on the local oscillator upswing.  }
+  \label{figure:C2C3simple}
+\end{figure}
+
+
+\begin{figure}
+  \center
+  \captionsetup{width=.8\linewidth}
+  \includegraphics[width=.8\linewidth]{c4c5Voltage.png}
+  \caption{Voltage on C4 and C5, ZetaSDR, when the local
+    oscillator is in phase with the RF signal}
+  \label{figure:C4C5simple}
+\end{figure}
+
+The sharp transitions and the short-lived spikes will be attenuated by
+the active low pass filter stage.  Hence, the ZetaSDR is really
+producing an output where the I signal is sampled at one point in the
+carrier cycle, and the Q signal is the signal sampled 90 degrees on
+from it in much the same way that the multiplication by the respective
+local oscillator does it in a conventional IQ mixer.
+
+Hence, if the amplitude or phase of the signal does not change
+rapidly during the sampling and we ignore the quarter cycles where the
+voltage on the capacitors is changing, then for the I signal, the
+voltage at capacitor C2  in Figure~\ref{figure:C2C3simple} is
+
+\begin{equation*}
+  s_1 = A cos(\theta) sin({\omega_b}t)
+\end{equation*}
+
+where:\\
+\\
+  ${\omega_b}$ is the baseband frequency in radians per second\\
+$\theta$ is the phase difference between the carrier and the Johnson counter transitions (and hence the 74HC4052 switching)
+
+and at C3 is:
+
+\begin{align*}
+  s_2 & = A cos(\theta) sin(\pi + {\omega_b}t) \\
+  \\
+  &= -A cos(\theta) sin({\omega_b}t)
+\end{align*}
+
+Because the active filter is the difference between the two voltages,
+
+\begin{equation}\label{eqn:tayloei}
+  I = s_1 - s_2 = 2 A cos(\theta) sin({\omega_b}t)
+\end{equation}
+
+Hence, the difference into the active low pass filter, ignoring the
+high frequency portion which results when one of the capacitors is
+tracking the output from the 74HC4052 rather than holding its voltage,
+is $2A sin(\theta) sin({\omega_b}t)$.
+
+By the same reasoning, the Q signal formed from the voltage difference
+between C4 and C5 is:
+
+\begin{equation}\label{eqn:tayloeq}
+  Q = 2 A sin(\theta) sin({\omega_b}t)
+\end{equation}
+
+\begin{figure}
+  \center
+  \captionsetup{width=.8\linewidth}
+  \includegraphics[width=.8\linewidth]{c2c3ModVoltage.png}
+  \caption{Voltage on C2 and C2 in the ZetaSDR, when the local
+    oscillator is in phase with the RF carrier, and the 7 MHz carrier
+    is amplitude modulated at 200 kHz}
+  \label{figure:C2C3mod}
+\end{figure}
+
+\begin{figure}
+  \center
+  \captionsetup{width=.8\linewidth}
+  \includegraphics[width=.8\linewidth]{c4c5ModVoltage.png}
+  \caption{Voltage on C4 and C5, when the local oscillator is in phase
+    with the RF carrier, and the 7 MHz carrier is amplitude modulated
+    at 200 kHz}
+  \label{figure:C4C5mod}
+\end{figure}
+
+
+The corresponding plots for a modulated signal are shown in
+Figures~\ref{figure:C2C3mod} and \ref{figure:C4C5mod}. Many more RF
+cycles are shown in these plots, and the 7 MHz carrier is amplitude
+modulated at 200 kHz which is an order of magnitude above any an audio
+signal, but has been done so that several AM cycles can be accommodated
+
+
+\begin{figure}
+  \center
+  \captionsetup{width=.8\linewidth}
+  \includegraphics[width=.8\linewidth]{c2c3VoltagePhase.png}
+  \caption{Voltage on C2 and C3 in the ZetaSDR, when the local
+    oscillator leads the RF carrier by 35 degrees}
+  \label{figure:C2C3phase}
+\end{figure}
+
+\begin{figure}
+  \center
+  \captionsetup{width=.8\linewidth}
+  \includegraphics[width=.8\linewidth]{c4c5VoltagePhase.png}
+  \caption{Voltage on C4 and C5 in the ZetaSDR, when the local
+    oscillator leads the RF carrier by 35 degrees}
+  \label{figure:C4C5phase}
+\end{figure}
+
+In practice, the 74HC4052 switching will usually be more out of phase
+with the RF carrier signal, and so something such as
+Figure~\ref{figure:C2C3phase} (and Figure~\ref{figure:C4C5phase} for
+the other pair of capacitors) is more likely.  The modulated versions
+of these plot, over a larger number of carrier cycles, are shown in
+Figures~\ref{figure:C2C3modphase} and \ref{figure:C4C5modphase} are
+obtained.
+
+Finally, Figure~\ref{figure:tayloelowpassphase} shows the I and Q
+signals through a low pass filter and then combining them to extract
+the baseband.  Because of the unusually high modulation frequency and
+signal strength used in the simulation, a 400 kHz $2^{nd}$ order zero
+gain low pass Butterworth filter is used instead of the 10 kHz cutoff
+active $1^{st}$ order low pass filter in the ZetaSDR radio.
+
+\begin{figure}
+  \center
+  \captionsetup{width=.8\linewidth}
+  \includegraphics[width=.8\linewidth]{c2c3ModVoltagePhase.png}
+  \caption{Voltage on C2 and C3 in the ZetaSDR, when the local
+    oscillator leads the carrier by 35\degree, and the 7 MHz carrier
+    is amplitude modulated at 200 kHz}
+  \label{figure:C2C3modphase}
+\end{figure}
+
+\begin{figure}
+  \center
+  \captionsetup{width=.8\linewidth}
+  \includegraphics[width=.8\linewidth]{c4c5ModVoltagePhase.png}
+  \caption{Voltage on C4 and C5 in the ZetaSDR, when the local
+    oscillator leads the carrier by 35\degree, and the 7 MHz carrier
+    is amplitude modulated at 200 kHz}
+  \label{figure:C4C5modphase}
+\end{figure}
+
+
+\begin{figure}
+  \center
+    \captionsetup{width=.8\linewidth}
+  \includegraphics[width=.8\linewidth]{tayloeLowPassPhase.png}
+  \caption{Response to a 200 kHz amplitude modulated signal, when the
+    local oscillator is 35{\degree} ahead of the RF carrier. Because
+    of the high input signal amplitude and the high modulation
+    frequency, the active low pass filters have been replaced with a
+    $2^{nd}$ order low pass filter, but with unity gain and a cutoff
+    frequency of 400 kHz.}
+  \label{figure:tayloelowpassphase}
+\end{figure}
+
+\section{Comparison with a conventional IQ mixer}
+
+A sinusoidally amplitude modulated RF signal, with a 100\% modulation
+depth, double-sideband and full-carrier, is described by
+
+\begin{equation*}
+S = A sin({\omega_b}t) sin({\omega_c}t)
+\end{equation*}
+
+where:\\
+\\
+$A$ is the signal amplitude\\
+$\omega_b$ is the baseband frequency\\
+$\omega_c$ is the carrier frequency \\
+  $t$ is time\\
+
+In a conventional IQ mixer, the I signal is produced by mixing with a
+local oscillator with a phase difference $\theta$:
+
+\begin{align*}
+I =& A sin({\omega_b}t)  sin({\omega}_ct)sin({\omega}_ct + \theta) \\
+\\
+&= A sin({\omega_b}t)  \frac{cos(\theta) - cos(2 {\omega}_ct - \theta)}{2}
+\\
+&= \frac{A sin({\omega_b}t) cos(\theta)}{2} - \frac{cos(2 {\omega_c}t - \theta)}{2}
+\end{align*}
+
+Because
+
+\begin{equation*}
+  sin(\alpha) sin(\beta) = \frac{sin(\alpha + \beta) - sin(\alpha - \beta)}{2}
+\end{equation*}
+
+The Q signal is produced by mixing the incoming RF signal with a
+similar local oscillator signal that is 90{\degree} out of phase with
+the I local oscillator:
+
+
+\begin{align*}
+  Q& = A sin({\omega_b}t) cos({\omega}_ct) sin({\omega}_ct + \theta) \\
+  \\
+  & = A sin({\omega_b}t) \frac{sin(2{\omega}_ct + \theta) + sin(\theta)}{2}\\
+  \\
+& = \frac{A sin({\omega_b}t)sin(2{\omega}_ct + \theta)}{2} + \frac{A sin({\omega_b}t)sin(\theta)}{2}\\
+\end{align*}
+
+Because
+
+\begin{equation*}
+  cos(\alpha)sin(\beta) = \frac{(sin(\alpha + \beta) - sin(\alpha - \beta)}{2} 
+\end{equation*}
+
+In both cases, the low pass filter will remove the portion of the
+signal with frequency $2{\omega_c}$ leaving
+
+\begin{equation*}
+  I = \frac{A sin({\omega_b}t)cos(\theta)}{2}
+\end{equation*}
+
+\begin{equation*}
+  Q = \frac{A sin({\omega_b}t)sin(\theta)}{2}
+\end{equation*}
+
+These two equations are of the same form as
+Equations~\ref{eqn:tayloei} and \ref{eqn:tayloeq}, the ones for the
+Tayloe mixer.
+
+Like the IQ mixer output, the high frequency portion of the Tayloe
+mixer signal is at $2\omega_c$, since the rapidly varying portion gets
+through two cycles for each cycle of the RF carrier.  although in this
+case there are additional harmonics.
+
+A results of simulation of a conventional (and ideal) IQ mixer, is
+shown in Figures~\ref{figure:iqmod}--\ref{figure:iqmodlowpassphase}
+for comparison with the Tayloe simulation plots above.
+
+\section{Conclusion}
+
+The Tayloe mixer produces a similar waveform to a conventional IQ
+mixer.
+
+\begin{figure}
+  \center \captionsetup{width=.8\linewidth}
+  \includegraphics[width=.8\linewidth]{iqModVoltage.png}
+  \caption{I/Q outputs using an ideal IQ mixer, when the local
+    oscillator is in phase with the RF carrier, and the 7 MHz carrier
+    is amplitude modulated at 200 kHz}
+  \label{figure:iqmod}
+\end{figure}
+
+
+\begin{figure}
+  \center
+    \captionsetup{width=.8\linewidth}
+  \includegraphics[width=.8\linewidth]{iqModVoltagePhase.png}
+  \caption{I/Q outputs using an ideal IQ mixer when the local
+    oscillator leads the carrier by 35\degree, and the 7 MHz carrier
+    is amplitude modulated at 200 kHz}
+  \label{figure:iqmodphase}
+\end{figure}
+
+
+\begin{figure}
+  \center
+    \captionsetup{width=.8\linewidth}
+  \includegraphics[width=.8\linewidth]{iqModLowPassPhase.png}
+  \caption{I/Q outputs using an ideal IQ mixer, when the local
+    oscillator is 35{\degree} ahead of the RF carrier, and with the
+    I/Q signals passed through a $4^{th}$ order low pass filter with a
+    cutoff of 3.5 MHz to remove the $2{\omega_c}$ signal.  Compare
+    this ideal case with Figure~\ref{figure:tayloelowpassphase}.}
+  \label{figure:iqmodlowpassphase}
+\end{figure}
+
+\begin{thebibliography}{9}
+\bibitem[LY1GP(2007)]{ly1gp:2007}
+  LY1GP (2007), {\it ZetaSDR for 40m band}
+  \\\texttt{http://www.qrz.lt/ly1gp/SDR/}
+  
+\bibitem[Tayloe(2013)]{Tayloe:2013} 
+  Tayloe, D (2013), {\it Ultra Low Noise, High Performance, Zero IF Quadrature Product Detector and Preamplifier},
+  \\\texttt{https://wparc.us/presentations/SDR-2-19-2013/Tayloe\_mixer\_x3a.pdf}
+
+\bibitem[Motorola(1996)]{Motorola:1996}
+  Motorola (1996),
+  {\it Analog Multiplexers/Demultiplexers High–Performance Silicon–Gate CMOS},
+\\\texttt{http://www.om3bc.com/datasheets/74HC4051.PDF}
+  
+\end{thebibliography}
+
+\end{document}
+
