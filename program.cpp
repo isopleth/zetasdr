@@ -56,7 +56,7 @@ using floating = long double;
 
 using namespace std;
 
-constexpr auto LOGIC_ONE_VOLTAGE = floating(2.4);         // Voltage corresponding to logic 1
+constexpr auto LOGIC_ONE_VOLTAGE = floating{2.4};         // Voltage corresponding to logic 1
 constexpr auto TIME_STEP_SIZE = floating{10e-12}; // 10 picoseconds time step size
 constexpr auto CARRIER_FREQUENCY =  floating{7e6}; // 7 MHz RF carrier frequency
 constexpr auto MODULATION_FREQUENCY = floating{2e5}; // 20 kHz amplitude modulation
