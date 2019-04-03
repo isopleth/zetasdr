@@ -85,10 +85,14 @@ at all.
 
 \subsection{Tayloe mixer}
 
-The ZetaSDR use a Tayloe Mixer \citep{Tayloe:2013} to demodulate the
-signal, which is an approximation to a conventional IQ mixer. This is
-based on a 74HC4052 analogue multiplexer/demultiplexer and charge
-storage capacitors to implement an integrator.
+The ZetaSDR uses a Tayloe mixer \citep{Tayloe:2013} to demodulate the
+signal, which is a type of switching mixer that produces quadrature
+(IQ) signals. It is based on a 74HC4052 analogue
+multiplexer/demultiplexer and capacitors to implement an integrator.
+It samples and holds the RF signal on each quarter cycle, sending the
+first and third quarter samples to the I output, and the second and
+fourth quarter samples to the Q output, inverting the samples read on
+the third and fourth cycles.
 
 The 74HC4052 is a two channel analogue multiplexer/demultiplexer.  One
 channel has an input, X, and switches it to one of four outputs, X0
@@ -203,7 +207,7 @@ the active low pass filter stage.  Hence, the ZetaSDR is really
 producing an output where the I signal is sampled at one point in the
 carrier cycle, and the Q signal is the signal sampled 90 degrees on
 from it in much the same way that the multiplication by the respective
-local oscillator does it in a conventional IQ mixer.
+local oscillator does it in a conventional multiplying IQ mixer.
 
 Hence, if the amplitude or phase of the signal does not change
 rapidly during the sampling and we ignore the quarter cycles where the
@@ -340,7 +344,7 @@ active $1^{st}$ order low pass filter in the ZetaSDR radio.
   \label{figure:tayloelowpassphase}
 \end{figure}
 
-\section{Comparison with a conventional IQ mixer}
+\section{Comparison with an ideal multiplying IQ mixer}
 
 A sinusoidally amplitude modulated RF signal, with a 100\% modulation
 depth, double-sideband and full-carrier, is described by
@@ -356,8 +360,8 @@ $\omega_b$ is the baseband frequency\\
 $\omega_c$ is the carrier frequency \\
   $t$ is time\\
 
-In a conventional IQ mixer, the I signal is produced by mixing with a
-local oscillator with a phase difference $\theta$:
+In a conventional multiplying IQ mixer, the I signal is produced by
+mixing with a local oscillator with a phase difference $\theta$:
 
 \begin{align*}
 I =& A sin({\omega_b}t)  sin({\omega}_ct)sin({\omega}_ct + \theta) \\
@@ -412,7 +416,7 @@ mixer signal is at $2\omega_c$, since the rapidly varying portion gets
 through two cycles for each cycle of the RF carrier.  although in this
 case there are additional harmonics.
 
-A results of simulation of a conventional (and ideal) IQ mixer, is
+The results of the simulation of an ideal multiplying IQ mixer are
 shown in Figures~\ref{figure:iqmod}--\ref{figure:iqmodlowpassphase}
 for comparison with the Tayloe simulation plots above.
 
