@@ -59,7 +59,7 @@ using namespace std;
 constexpr auto LOGIC_ONE_VOLTAGE = floating{2.4};         // Voltage corresponding to logic 1
 constexpr auto TIME_STEP_SIZE = floating{10e-12}; // 10 picoseconds time step size
 constexpr auto CARRIER_FREQUENCY =  floating{7e6}; // 7 MHz RF carrier frequency
-constexpr auto MODULATION_FREQUENCY = floating{2e5}; // 20 kHz amplitude modulation
+constexpr auto MODULATION_FREQUENCY = floating{2e5}; // 200 kHz amplitude modulation
 constexpr auto NO_MODULATION = floating{0};        // Use this where we don't want modulation
 constexpr auto CARRIER_AMPLITUDE = floating{1e-3}; // 1 mV
 constexpr auto PHASE_ANGLE = floating{35};
@@ -77,9 +77,9 @@ constexpr auto CYCLES = 80;
 
 /**
  * This represents the Johnson counter constructed from two D type
- * fip flops.  In practice there will be some propagation delay between
- * the clock changing and the output from a counter changing, but this
- * is not modelled by this class.
+ * flip flops.  In practice there will be some propagation delay
+ * between the clock changing and the output from a counter changing,
+ * but this is not modelled by this class.
  */
 class JohnsonCounter {
   // This is the state, 0->3
@@ -261,6 +261,7 @@ public:
    */
   auto get(size_t timeStep) -> floating {
     if (!modFreqHz) {
+      // No modulation
       return 1;
     }
     else {
@@ -366,11 +367,11 @@ auto lpFilter(const FloatingVector& signal,
  * AM demodulation of the I/Q signal
  *
  * @param inphaseVector I samples vector
- * @param quadritureVector Q samples vector
+ * @param quadratureVector Q samples vector
  * @param demodulatedOutputVector output vector
  */
 auto amDemod(const FloatingVector& inphaseVector,
-	     const FloatingVector& quadritureVector,
+	     const FloatingVector& quadratureVector,
 	     FloatingVector& demodulatedOutputVector) {
 
   auto size = inphaseVector.size();
@@ -380,11 +381,11 @@ auto amDemod(const FloatingVector& inphaseVector,
   for (decltype(size) index = 0; index < size; index++) {
     auto inphaseValue = inphaseVector[index];
     auto value = inphaseValue * inphaseValue;
-    auto quadritureValue = quadritureVector[index];
-    value += quadritureValue * quadritureValue;
+    auto quadratureValue = quadratureVector[index];
+    value += quadratureValue * quadratureValue;
     value = sqrt(value);
     // Need to make sure that square root value is given correct sign
-    if (inphaseValue + quadritureValue < 0) {
+    if (inphaseValue + quadratureValue < 0) {
       value = -value;
     }
     demodulatedOutputVector.push_back(value);
@@ -420,7 +421,6 @@ auto tayloe(size_t cycleCount,
 
   auto ampModulation = AmplModulation{modFreqHz};
 
-  // Set initial voltage to 2.5 volts
   auto capC2 = Capacitor{CAPACITANCE_SANDH, RESISTANCE_74HC4052};
   auto capC3 = Capacitor{CAPACITANCE_SANDH, RESISTANCE_74HC4052};
   auto capC4 = Capacitor{CAPACITANCE_SANDH, RESISTANCE_74HC4052};
@@ -439,6 +439,7 @@ auto tayloe(size_t cycleCount,
   // Accumulate the results rather than print them out immediately
   // so we can add a filter that processes a set of values if we want
   auto size = cycleCount * floor(timeStepsPerCarrierCycle);
+
   auto signalVector = FloatingVector{size};
   auto modulationVector = FloatingVector{size};
   auto time = FloatingVector{size};
@@ -449,7 +450,7 @@ auto tayloe(size_t cycleCount,
   auto differenceIC2Avector = FloatingVector{size};
   auto differenceIC2Bvector = FloatingVector{size};
   auto filteredInphaseVector = FloatingVector{size};
-  auto filteredQuadritureVector = FloatingVector{size};
+  auto filteredQuadratureVector = FloatingVector{size};
   auto demodulatedOutputVector = FloatingVector{size};
   
   auto totaltimeSteps = size_t{0};
@@ -501,15 +502,15 @@ auto tayloe(size_t cycleCount,
 
   if (lpPassFreqHz) {
     lpFilter(differenceIC2Avector, filteredInphaseVector, 2, lpPassFreqHz);
-    lpFilter(differenceIC2Bvector, filteredQuadritureVector, 2, lpPassFreqHz);
+    lpFilter(differenceIC2Bvector, filteredQuadratureVector, 2, lpPassFreqHz);
   }
   else {
     filteredInphaseVector = differenceIC2Avector;
-    filteredQuadritureVector = differenceIC2Bvector;
+    filteredQuadratureVector = differenceIC2Bvector;
   }
   
   amDemod(filteredInphaseVector,
-	  filteredQuadritureVector,
+	  filteredQuadratureVector,
 	  demodulatedOutputVector);
   
   auto counter = size_t{0};
@@ -526,7 +527,7 @@ auto tayloe(size_t cycleCount,
 	   << differenceIC2Avector[index] << ", "// 7
 	   << differenceIC2Bvector[index] << "," // 8
 	   << filteredInphaseVector[index] << ", " // 9
-	   << filteredQuadritureVector[index] << "," // 10
+	   << filteredQuadratureVector[index] << "," // 10
 	   << demodulatedOutputVector[index] // 11
 	   << endl;
     }
@@ -567,9 +568,9 @@ auto iqMixer(size_t cycleCount,
   auto localOscAngleVector = FloatingVector{size};
   auto modulationVector = FloatingVector{size};
   auto inphaseVector = FloatingVector{size};
-  auto quadritureVector = FloatingVector{size};
+  auto quadratureVector = FloatingVector{size};
   auto filteredInphaseVector = FloatingVector{size};
-  auto filteredQuadritureVector = FloatingVector{size};
+  auto filteredQuadratureVector = FloatingVector{size};
   auto demodulatedOutputVector = FloatingVector{size};
 
   auto ampModulation = AmplModulation{modFreqHz};
@@ -588,7 +589,7 @@ auto iqMixer(size_t cycleCount,
       // Local oscillator is phaseAngle behind carrier
       auto localOscAngle = carrierAngle - phaseAngle;
       auto inphase = signal * sin(localOscAngle);
-      auto quadriture = signal * cos(localOscAngle);
+      auto quadrature = signal * cos(localOscAngle);
 
 
       time.push_back(totaltimeSteps * TIME_STEP_SIZE);
@@ -596,21 +597,21 @@ auto iqMixer(size_t cycleCount,
       localOscAngleVector.push_back(localOscAngle);
       modulationVector.push_back(modulation);
       inphaseVector.push_back(inphase);
-      quadritureVector.push_back(quadriture);
+      quadratureVector.push_back(quadrature);
     }
   }
 
   if (lpPassFreqHz) {
     lpFilter(inphaseVector, filteredInphaseVector, 4, lpPassFreqHz);
-    lpFilter(quadritureVector, filteredQuadritureVector, 4, lpPassFreqHz);
+    lpFilter(quadratureVector, filteredQuadratureVector, 4, lpPassFreqHz);
   }
   else {
     filteredInphaseVector = inphaseVector;
-    filteredQuadritureVector = quadritureVector;
+    filteredQuadratureVector = quadratureVector;
   }
 
   amDemod(filteredInphaseVector,
-	  filteredQuadritureVector,
+	  filteredQuadratureVector,
 	  demodulatedOutputVector);
 
   auto counter = size_t{0};
@@ -622,9 +623,9 @@ auto iqMixer(size_t cycleCount,
 	   << localOscAngleVector[index] << ", "     // 2
 	   << modulationVector[index] << ", "        // 3
 	   << inphaseVector[index] << ", "           // 4
-	   << quadritureVector[index] << ", "        // 5
+	   << quadratureVector[index] << ", "        // 5
 	   << filteredInphaseVector[index] << ", "   // 6
-	   << filteredQuadritureVector[index] << "," // 7
+	   << filteredQuadratureVector[index] << "," // 7
 	   << demodulatedOutputVector[index] << endl;
     }
   }
