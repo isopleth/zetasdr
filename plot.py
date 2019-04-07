@@ -46,7 +46,7 @@ T_I_LOW_PASS = 9
 T_Q_LOW_PASS = 10
 T_AM_DEMOD = 11
 
-# Indexes into the I/Q mixer CSV files
+# Indexes into the IQ mixer CSV files
 IQ_TIME = 0
 IQ_SIGNAL = 1
 IQ_LOCAL_OSC_ANGLE = 2
@@ -127,7 +127,7 @@ def tayloeVoltage(input, filename, title, cap1, cap2,
     plt.savefig(filename)
 
 ##
-# I/Q mixer
+# Ideal multiplying IQ mixer
 #
 # @param input input filename
 # @param filename output filename
@@ -172,6 +172,7 @@ def iqVoltage(input, filename, title, threePlots):
     plt.subplot(numberOfPlots, 1, numberOfPlots - 1)
     plt.plot(time, i, "y-", label = "$I$")
     plt.ylabel('volts')
+    plt.legend(loc="center right")
     if not threePlots:
         plt.plot(time, q, "b-", label = "$Q$")
         plt.xlabel('microseconds')
@@ -186,7 +187,7 @@ def iqVoltage(input, filename, title, threePlots):
     plt.savefig(filename)
 
 ##
-# I/Q mixer
+# Ideal multiplying IQ mixer
 #
 # @param input input filename
 # @param filename output filename
@@ -222,7 +223,6 @@ def iqLowPass(input, filename, title):
         if len(title):
             plt.suptitle(title)
 
-
     plt.subplot(5, 1, 1)
     plt.plot(time, modulation, "c-", label="Modulation")
     plt.tick_params(axis='x', which='both', bottom=False,
@@ -230,7 +230,6 @@ def iqLowPass(input, filename, title):
     plt.ylabel('volts')
     plt.legend(loc="center right")
 
-    
     plt.subplot(5, 1, 2)
     plt.plot(time, rfSignal, "r-", label="RF signal")
     plt.tick_params(axis='x', which='both', bottom=False,
@@ -307,7 +306,6 @@ def tayloeLowPass(input, filename, title):
                     top=False, labelbottom=False)
     plt.ylabel('volts')
     plt.legend(loc="center right")
-
     
     plt.subplot(5, 1, 2)
     plt.plot(time, rfSignal, "r-", label="RF signal")
@@ -436,7 +434,6 @@ def iqModPhaseLowPass():
     iqLowPass("iq_80_200000_35.txt", "iqModLowPassPhase.png",
               "I/Q, 7 MHz, 200 kHz modulation, 35 degrees phase angle")
 
-    
 def main():
     # Tayloe
     c2c3Voltage()
@@ -449,7 +446,7 @@ def main():
     c4c5ModPhaseVoltage()
     tayloeModPhaseVoltage()
 
-    # I/Q mixer
+    # Multiplying IQ mixer
     iqModVoltage()
     iqModPhaseVoltage()
     iqModLowPass();

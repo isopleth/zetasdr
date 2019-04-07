@@ -2,8 +2,8 @@
  * Non-Spice simulation of ZetaSDR radio
  * http://www.qrz.lt/ly1gp/SDR
  *
- * Specifically it demonstrates how the Tayloe switching integrator
- * works
+ * Specifically it demonstrates how the Tayloe quadrature product
+ * detector.
  *
  * The modulation frequency is an unrealistic 200 kHz to provide an
  * intelligible plot.  In practice, 7 MHz is in an amateur band and AM
@@ -36,8 +36,8 @@
  * SOFTWARE.
  */
 
-// The program is using AAA (almost-always-auto) style, in case you are
-// wondering
+// The program is using AAA (almost-always-auto) style, in case you
+// are wondering
 
 #include <array>
 #include <cmath>
@@ -396,9 +396,10 @@ auto amDemod(const FloatingVector& inphaseVector,
 //===================================================================
 
 /**
- * This simulates the Tayloe I/Q mixer.  It outputs the results into
- * a data file. The phase angle is the phase of the initial state of the
- * carrier with respect to the initial state of the local oscillator.
+ * This simulates the Tayloe quadrature product detector.  It outputs
+ * the results into a data file. The phase angle is the phase of the
+ * initial state of the carrier with respect to the initial state of
+ * the local oscillator.
  *
  * @param cycleCount number of carrier cycles to simulate
  * @param carrierAmplitude carrier amplitude in volts
@@ -514,7 +515,8 @@ auto tayloe(size_t cycleCount,
 	  demodulatedOutputVector);
   
   auto counter = size_t{0};
-  const auto initialIndex = static_cast<FloatingVector::size_type>(EXTRA_CYCLES*timeStepsPerCarrierCycle);
+  const auto initialIndex = static_cast<FloatingVector::size_type>
+    (EXTRA_CYCLES*timeStepsPerCarrierCycle);
   for (auto index = initialIndex; index < signalVector.size(); index++) {
     if (counter++ % SPAN == 0) {
       file << time[index] << ", " // 0
@@ -615,8 +617,10 @@ auto iqMixer(size_t cycleCount,
 	  demodulatedOutputVector);
 
   auto counter = size_t{0};
-  const auto initialIndex = static_cast<FloatingVector::size_type>(EXTRA_CYCLES*timeStepsPerCarrierCycle);
-  for (auto index = size_t{initialIndex}; index < signalVector.size(); index++) {
+  const auto initialIndex = static_cast<FloatingVector::size_type>
+    (EXTRA_CYCLES*timeStepsPerCarrierCycle);
+  for (auto index = size_t{initialIndex};
+       index < signalVector.size(); index++) {
     if (counter++ % SPAN == 0) {
       file << time[index] << ", "                    // 0
 	   << signalVector[index] << ", "            // 1
@@ -635,7 +639,7 @@ auto iqMixer(size_t cycleCount,
 
 auto main() -> int {
   /*
-   * Data for a sine wave
+   * Unmodulated carrier, in phase with local oscillator
    */
   tayloe(4, CARRIER_AMPLITUDE, CARRIER_FREQUENCY, NO_MODULATION);
 
@@ -647,27 +651,27 @@ auto main() -> int {
 	 PHASE_ANGLE);
 
   /*
-   * Data for a sine wave + samples X0 and X3 output with modulation
+   * Modulated carrier, in phase with local oscillator
    */
   tayloe(CYCLES, CARRIER_AMPLITUDE, CARRIER_FREQUENCY, MODULATION_FREQUENCY);
 
   /*
-   * Modulated carrier with 35 degree phase difference in initial state
-   * compared to local oscillator
+   * Modulated carrier with 35 degree phase difference in initial
+   * state compared to local oscillator
    */
   tayloe(CYCLES, CARRIER_AMPLITUDE, CARRIER_FREQUENCY, MODULATION_FREQUENCY,
 	 PHASE_ANGLE, MODULATION_FREQUENCY * 2);
 
   /*
-   * Perfect I/Q demodulator. Set the cut off frequency to the carrier
-   * frequency because we will get a demodulated signal and a signal at
-   * 2 x the carrier frequency.
+   * Ideal multiplying IQ mixer. Set the cut off frequency to the
+   * carrier frequency because we will get a demodulated signal and a
+   * signal at 2 x the carrier frequency.
    */
   iqMixer(CYCLES, CARRIER_AMPLITUDE, CARRIER_FREQUENCY, MODULATION_FREQUENCY,
 	  0, CARRIER_FREQUENCY/2);
 
   /*
-   * Perfect I/Q modulator with 35 degree phase difference
+   * Ideal multiplying IQ mixer with 35 degree phase difference
    */
   iqMixer(CYCLES, CARRIER_AMPLITUDE, CARRIER_FREQUENCY, MODULATION_FREQUENCY,
 	  PHASE_ANGLE, CARRIER_FREQUENCY/2);
