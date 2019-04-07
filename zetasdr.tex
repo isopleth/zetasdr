@@ -89,11 +89,11 @@ The ZetaSDR uses a Tayloe quadrature product detector
 mixer, to demodulate the signal.  This is a type of quadrature
 sampling detector, a switching mixer that produces quadrature (IQ)
 signals. It is based on a 74HC4052 analogue multiplexer/demultiplexer
-and capacitors to implement an integrator.  It samples and holds the
-RF signal on each quarter cycle, sending the first and third quarter
-samples to the I output, and the second and fourth quarter samples to
-the Q output, inverting the samples read on the third and fourth
-cycles.
+and capacitors to implement an integrator.  It samples, averages and
+holds the RF signal on each quarter cycle, sending the first and third
+quarter samples to the I output, and the second and fourth quarter
+samples to the Q output, inverting the samples read on the third and
+fourth cycles.
 
 The 74HC4052 is a two channel analogue multiplexer/demultiplexer.  One
 channel has an input, X, and switches it to one of four outputs, X0
@@ -141,7 +141,7 @@ Hence, each of the four pairs of outputs X0/Y0, X1/Y1, X2/Y2 and X3/Y3
 receive a quarter cycle of the RF signal.  The outputs connect to
 capacitors that charge/discharge as the RF carrier signal is applied
 to them but hold their voltage when the corresponding 74HC4052 output
-is disabled and so in its high impedance state. The amplitude of the
+is disabled and so in its high impedance state.  The amplitude of the
 RF carrier depends on the incoming signal strength and the quality of
 the antenna and preamplifier, so I picked an arbitrary value of 1 mV
 for the simulation program.
