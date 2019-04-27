@@ -1,0 +1,2 @@
+(load (build-path geda-rc-path "gschem-colormap-lightbg"))
+(define default-titleblock "")
