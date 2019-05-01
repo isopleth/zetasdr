@@ -208,10 +208,8 @@ auto Signal::getRadians(size_t index,
  */
 auto Signal::getTotalSignal(size_t timeStep) const -> floating {
   auto signalVoltage = floating{0};
-  for (auto signal : signals) {
+  for (auto&& signal : signals) {
     signalVoltage += signal.getSignal(timeStep);
   }
   return signalVoltage;
 }
-
-
