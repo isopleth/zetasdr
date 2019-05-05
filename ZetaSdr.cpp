@@ -55,7 +55,7 @@ class JohnsonCounter {
   static constexpr auto OUTPUT_VALUE = array<unsigned, 4>{0, 1, 3, 2};
 
 public:
-  JohnsonCounter() : state(0) {}
+  JohnsonCounter() : state{0} {}
 
   /**
    * Advance the Johnson counter by one clock
@@ -182,7 +182,7 @@ public:
    * @param resistance resistance through 74HC4052
    */
   SeriesRC(const Circuit& circuit) :
-    timeConstant(circuit.resistance * circuit.capacitance),
+    timeConstant{circuit.resistance * circuit.capacitance},
     voltage{0},
     errorFlagged{false} {}
 
@@ -228,7 +228,7 @@ public:
  *
  * @param circuit circit characteristics
  */
-ZetaSdr::ZetaSdr(const Circuit& circuit) : circuit(circuit) {}
+ZetaSdr::ZetaSdr(const Circuit& circuit) : circuit{circuit} {}
 
 /**
  * This simulates the Tayloe quadrature product detector.  It outputs
@@ -254,17 +254,17 @@ auto ZetaSdr::run(const string& outputFilename,
     "C3, C4, C5, IC2A, IC2B, "
     "filteredInphase, filteredQuadrature, demodulated";
 
-  constexpr size_t INDEX_SIGNAL = 0;
-  constexpr size_t INDEX_MODULATION = 1;
-  constexpr size_t INDEX_CAPC2_VOLTAGE = 2;
-  constexpr size_t INDEX_CAPC3_VOLTAGE = 3;
-  constexpr size_t INDEX_CAPC4_VOLTAGE = 4;
-  constexpr size_t INDEX_CAPC5_VOLTAGE = 5;
-  constexpr size_t INDEX_DIFFERENCE_IC2A = 6;
-  constexpr size_t INDEX_DIFFERENCE_IC2B = 7;
-  constexpr size_t INDEX_FILTERED_INPHASE = 8;
-  constexpr size_t INDEX_FILTERED_QUADRATURE = 9;
-  constexpr size_t INDEX_DEMODULATED = 10;
+  constexpr auto INDEX_SIGNAL = size_t{0};
+  constexpr auto INDEX_MODULATION = size_t{1};
+  constexpr auto INDEX_CAPC2_VOLTAGE = size_t{2};
+  constexpr auto INDEX_CAPC3_VOLTAGE = size_t{3};
+  constexpr auto INDEX_CAPC4_VOLTAGE = size_t{4};
+  constexpr auto INDEX_CAPC5_VOLTAGE = size_t{5};
+  constexpr auto INDEX_DIFFERENCE_IC2A = size_t{6};
+  constexpr auto INDEX_DIFFERENCE_IC2B = size_t{7};
+  constexpr auto INDEX_FILTERED_INPHASE = size_t{8};
+  constexpr auto INDEX_FILTERED_QUADRATURE = size_t{9};
+  constexpr auto INDEX_DEMODULATED = size_t{10};
   
   auto timeStepsPerCarrierCycle = signal.getTimeStepsPerCarrierCycle(0);
 
@@ -274,7 +274,7 @@ auto ZetaSdr::run(const string& outputFilename,
   auto capC3 = SeriesRC{circuit};
   auto capC4 = SeriesRC{circuit};
   auto capC5 = SeriesRC{circuit};
-  auto capacitor =array<SeriesRC*, 4 >{&capC2, &capC4, &capC5, &capC3};
+  const auto capacitor = array<SeriesRC*, 4 >{&capC2, &capC4, &capC5, &capC3};
 
   // phaseOffset is the fraction of a carrier cycle that the local
   // oscillator starts at. The carrier is ahead of the local
