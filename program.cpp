@@ -76,7 +76,7 @@ constexpr auto RESISTANCE = floating{85};
 constexpr auto CAPACITANCE = floating{0.022e-6}; // 0.022 uF
 
 // 400 kHz cutoff
-constexpr auto FILTER_CUTOFF = 4e5;
+constexpr auto FILTER_CUTOFF = floating{4e5};
 
 // Number of carrier cycles
 constexpr auto CYCLES = 200;

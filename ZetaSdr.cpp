@@ -287,8 +287,8 @@ auto ZetaSdr::run(const string& outputFilename,
     
   auto totalTimeSteps = size_t{0};
 
-  for (decltype(cycleCount) cycles = 0; cycles < cycleCount; cycles++) {
-    for (decltype(timeStepsPerCarrierCycle) timeStep = 1;
+  for (auto cycles = decltype(cycleCount){0}; cycles < cycleCount; cycles++) {
+    for (auto timeStep = decltype(timeStepsPerCarrierCycle){1};
 	 timeStep <= timeStepsPerCarrierCycle; timeStep++) {
 	
       totalTimeSteps++;

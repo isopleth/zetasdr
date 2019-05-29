@@ -61,18 +61,18 @@ auto IqMixer::run(const string& outputFilename,
   cout << "Writing " << outputFilename << endl;
   reset();
   
-  const string headings = "timesteps, time, signal, localOsc, "
+  const auto headings = "timesteps, time, signal, localOsc, "
     "modulation, inphase, quadrature, filteredInphase, "
-    "filteredQuadrature, demodulated";
+    "filteredQuadrature, demodulated"s;
 
-  constexpr size_t INDEX_SIGNAL = 0;
-  constexpr size_t INDEX_LOCAL_OSC = 1;
-  constexpr size_t INDEX_MODULATION = 2;
-  constexpr size_t INDEX_INPHASE = 3;
-  constexpr size_t INDEX_QUADRATURE = 4;
-  constexpr size_t INDEX_FILTERED_INPHASE = 5;
-  constexpr size_t INDEX_FILTERED_QUADRATURE = 6;
-  constexpr size_t INDEX_DEMODULATED = 7;
+  constexpr auto INDEX_SIGNAL = size_t{0};
+  constexpr auto INDEX_LOCAL_OSC = size_t{1};
+  constexpr auto INDEX_MODULATION = size_t{2};
+  constexpr auto INDEX_INPHASE = size_t{3};
+  constexpr auto INDEX_QUADRATURE = size_t{4};
+  constexpr auto INDEX_FILTERED_INPHASE = size_t{5};
+  constexpr auto INDEX_FILTERED_QUADRATURE = size_t{6};
+  constexpr auto INDEX_DEMODULATED = size_t{7};
   
   // Add a few extra cycles to let the simulation stabilise
   cycleCount += EXTRA_CYCLES;
@@ -87,8 +87,8 @@ auto IqMixer::run(const string& outputFilename,
 				signal.getModFreqHz(0),
 				-phaseAngleDeg};
 
-  for (decltype(cycleCount) cycles = 0; cycles < cycleCount; cycles++) {
-    for (decltype(timeStepsPerCarrierCycle) timeStep = 1;
+  for (auto cycles = decltype(cycleCount){0}; cycles < cycleCount; cycles++) {
+    for (auto timeStep = decltype(timeStepsPerCarrierCycle){1};
 	 timeStep <= timeStepsPerCarrierCycle; timeStep++) {
 
       totalTimeSteps++;
