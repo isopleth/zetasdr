@@ -127,7 +127,8 @@ public:
    * the phase angle of the carrier before it reaches 0.
    *
    * @param frequencyHz local oscillator frequency
-   * @param phaseOffsetRadians
+   * @param phaseOffsetRadians phase offset of oscillator driving
+   * Johnson counter with respect to the radio carrier phase
    * @param johnsonCounter Johnson counter object that the oscillator 
    *                       drives
    */
@@ -178,8 +179,8 @@ public:
   /**
    * Constructor
    *
-   * @param capacitance capacitance in Farads
-   * @param resistance resistance through 74HC4052
+   * @param circuit circuit characteristics, specifically detector
+   * capacitors value and resistance through 74HC4052 and
    */
   SeriesRC(const Circuit& circuit) :
     timeConstant{circuit.resistance * circuit.capacitance},
