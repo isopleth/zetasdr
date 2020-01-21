@@ -39,7 +39,7 @@ using namespace std;
  * @param lpFreqHz low pass filter cutoff frequency
  */
 IqMixer::IqMixer(const floating lpFreqHz) :
-  lpFreqHz(lpFreqHz) {}
+  lpFreqHz{lpFreqHz} {}
 
 //===================================================================
 
