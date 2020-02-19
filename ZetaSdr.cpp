@@ -309,7 +309,8 @@ auto ZetaSdr::run(const string& outputFilename,
       // change their state at all (they are assumed to have no
       // leakage resistance)
       auto enabledChannel = johnsonCounter.get();
-      for (auto&& index = size_t{0}; index < johnsonCounter.stateCount();
+      for (auto index = decltype(johnsonCounter.stateCount()){0};
+	   index < johnsonCounter.stateCount();
 	   index++) {
 	auto* cap = capacitor.at(index);
 	if (index == enabledChannel) {

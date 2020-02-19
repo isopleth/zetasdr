@@ -26,6 +26,7 @@
 
 #pragma once
 
+#include <cstddef>
 #include "misc.h"
 
 class Signal;
@@ -42,7 +43,7 @@ class Mixer {
 	   std::size_t timeStep) : timeStep{timeStep},
       timeStamp(timeStep * TIME_STEP_SIZE) {
 	fields.reserve(fieldcount);
-	for (auto index = size_t{0}; index < fieldcount; index++) {
+	for (auto index = decltype(fieldcount){0}; index < fieldcount; index++) {
 	  fields.push_back(0.);
 	}
       }
@@ -56,15 +57,15 @@ class Mixer {
   
   auto add(std::unique_ptr<DataLine>& newLine) -> void;
 
-  auto butterworth(size_t inputIndex,
-		   size_t outputIndex,
+  auto butterworth(std::size_t inputIndex,
+		   std::size_t outputIndex,
 		   unsigned poles,
 		   floating cutoffHz,
 		   bool highPass) -> void;
   
-  auto amDemod(size_t inphaseVectorIndex,
-	       size_t quadratureVectorIndex,
-	       size_t demodulatedOutputVector) -> void;
+  auto amDemod(std::size_t inphaseVectorIndex,
+	       std::size_t quadratureVectorIndex,
+	       std::size_t demodulatedOutputVector) -> void;
 
   auto outputData(const std::string& filename,
 		  const std::string& headings,
@@ -83,7 +84,7 @@ class ZetaSdr : public Mixer {
  public: 
   ZetaSdr(const Circuit& circuit);
   auto run(const std::string& outputFilename,
-	   size_t cycleCount,
+	   std::size_t cycleCount,
 	   const Signal& signal,
 	   floating phaseAngleDeg) -> void;
   virtual ~ZetaSdr() = default;
@@ -98,7 +99,7 @@ class IqMixer : public Mixer {
  public:
   IqMixer(floating lpFreqHz);
   auto run(const std::string& outputFilename,
-	   size_t cycleCount,
+	   std::size_t cycleCount,
 	   const Signal& signal,
 	   floating phaseAngleDeg) -> void;
 

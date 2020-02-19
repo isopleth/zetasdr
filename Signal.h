@@ -26,9 +26,10 @@
 
 #pragma once
 
-#include <vector>
-#include <cmath>
 #include "misc.h"
+#include <cmath>
+#include <cstddef>
+#include <vector>
 
 //===================================================================
  
@@ -46,10 +47,10 @@ private:
 		 floating modFreqHz,
 		 floating initialPhaseAngleDegrees);
 
-    auto getAmplitude(size_t timeStep) const -> floating;
-    auto getRadians(size_t timeStep) const -> floating;
-    auto getSignal(size_t timeStep) const -> floating;
-    auto timeStepsIntoACycle(size_t timeStep) const -> floating;
+    auto getAmplitude(std::size_t timeStep) const -> floating;
+    auto getRadians(std::size_t timeStep) const -> floating;
+    auto getSignal(std::size_t timeStep) const -> floating;
+    auto timeStepsIntoACycle(std::size_t timeStep) const -> floating;
   };
 
   std::vector<SingleSignal> signals;
@@ -66,15 +67,15 @@ public:
 	   floating modFreqHz,
 	   floating initialPhaseAngleDegrees = 0) -> void;
   
-  auto getCarrierAmplitude(size_t index) const -> floating;
-  auto getAmplitude(size_t index, size_t timeStep) const -> floating;
-  auto getModFreqHz(size_t index) const -> floating;
-  auto getCarrierFreqHz(size_t index) const -> floating;
-  auto getTimeStepsPerCarrierCycle(size_t index) const -> floating;
+  auto getCarrierAmplitude(std::size_t index) const -> floating;
+  auto getAmplitude(std::size_t index, std::size_t timeStep) const -> floating;
+  auto getModFreqHz(std::size_t index) const -> floating;
+  auto getCarrierFreqHz(std::size_t index) const -> floating;
+  auto getTimeStepsPerCarrierCycle(std::size_t index) const -> floating;
 
-  auto getRadians(size_t index,
-		  size_t timeStep) const -> floating;
-  auto getTotalSignal(size_t timeStep) const -> floating;
+  auto getRadians(std::size_t index,
+		  std::size_t timeStep) const -> floating;
+  auto getTotalSignal(std::size_t timeStep) const -> floating;
 };
 
 
