@@ -26,6 +26,9 @@
 # SOFTWARE.
 #
 
+import matplotlib
+matplotlib.use('Agg')
+
 import matplotlib.pyplot as plt
 import csv
 
@@ -180,12 +183,11 @@ def iqVoltage(input, filename, title, threePlots):
 
     plt.subplot(numberOfPlots, 1, numberOfPlots - 1)
     plt.plot(time, i, 'y-', label = "$I$")
+    plt.xlabel("microseconds")
     plt.ylabel("volts")
     plt.legend(loc='center right')
     if not threePlots:
         plt.plot(time, q, 'b-', label = "$Q$")
-        plt.xlabel("microseconds")
-        plt.legend(loc='center right')
     else:
         plt.subplot(3, 1, 3)
         plt.plot(time, q, 'b-', label = "$Q$")
@@ -356,7 +358,7 @@ def zetasdrDemod(input, filename, title):
     plt.savefig(filename)
 
 def main():
-    # ZetaSDR
+    plt.ioff()
 
     # Plot C2 & C3 voltage with no modulation and no phase shift
     # between local oscillator and carrier
